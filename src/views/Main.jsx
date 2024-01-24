@@ -1,11 +1,9 @@
-/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import DraggableItem from './components/DraggableItems';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useDrop } from 'react-dnd';
 
-const MainPage = () => {
+const Whatsapp = () => {
   const [draggedComponents, setDraggedComponents] = useState([]);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
@@ -38,18 +36,53 @@ const MainPage = () => {
     });
   };
 
+  const handleDropFromSidebar = (item, monitor) => {
+    console.log('handleDropFromSidebar ran', monitor, monitor.getClientOffset());
+    const dropResult = monitor.getClientOffset();
+
+    if (dropResult) {
+      const newItem = {
+        type: item.type,
+        position: {
+          x: dropResult.x - 200,
+          y: dropResult.y - 25,
+        },
+      };
+
+      setDraggedComponents((prev) => [...prev, newItem]);
+    }
+  };
+
+  const [, drop] = useDrop({
+    accept: 'SIDEBAR_ITEM',
+    drop: (item, monitor) => handleDropFromSidebar(item, monitor)
+  });
+
+  const handleDelete = (index) => {
+    setDraggedComponents((prev) => prev.filter((_, i) => i !== index));
+  }
+  
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div style={{ display: 'flex' }}>
-        <Sidebar onItemClick={handleSidebarItemClick} />
-        <div style={{ flex: 1, padding: '20px', position: 'relative', width: canvasSize.width, height: canvasSize.height, border: '1px solid #ccc', overflow: 'hidden' }}>
-          {draggedComponents.map((component, index) => (<>
-            <DraggableItem key={index} index={index} component={component} onDrag={handleDrag} />
-          </>))}
-        </div>
+    <div style={{ display: 'flex' }}>
+      <Sidebar onSidebarItemClick={handleSidebarItemClick} />
+      <div
+        ref={drop}
+        style={{
+          flex: 1,
+          padding: '20px',
+          position: 'relative',
+          width: canvasSize.width,
+          height: canvasSize.height,
+          border: '1px solid #ccc',
+          overflow: 'hidden'
+        }}
+      >
+        {draggedComponents.map((component, index) => (
+          <DraggableItem key={index} index={index} component={component} onDrag={handleDrag} onDelete={handleDelete}/>
+        ))}
       </div>
-    </DndProvider>
+    </div>
   );
 };
 
-export default MainPage;
+export default Whatsapp;
