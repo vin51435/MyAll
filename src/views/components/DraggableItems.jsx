@@ -3,6 +3,8 @@ import React from 'react';
 import { useDrag } from 'react-dnd';
 
 const DraggableItem = ({ component, index, onDrag, onDelete }) => {
+  console.log(component, 'component');
+
   const [{ isDragging }, drag] = useDrag({
     type: 'COMPONENT',
     item: { type: component.type, index },
@@ -17,10 +19,19 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
     },
   });
 
+  // const dynamicStyles = {
+  //   width: component.positions.right - component.positions.left,
+  //   height: component.positions.bottom - component.positions.top,
+  // };
+
   const getDynamicStyles = () => {
     switch (component.type) {
       case 'Text':
-        return { width: '100px', height: '50px', fontSize: '16px', fontWeight: 'bold' };
+        return {
+          width: component.positions.right - component.positions.left,
+          height: component.positions.bottom - component.positions.top,
+          fontSize: '16px', fontWeight: 'bold'
+        };
       case 'Image':
         return { width: '150px', height: '100px' };
       default:
@@ -51,8 +62,8 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
     <div
       style={{
         position: 'absolute',
-        left: component.position.x,
-        top: component.position.y,
+        left: component.positions.left,
+        top: component.positions.top,
         border: '1px solid #000',
         ...dynamicStyles,
       }}
@@ -69,7 +80,10 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
       >
         {renderItemContent(component)}
       </div>
-      <button onClick={() => onDelete(index)} style={{ position: 'absolute', top: '-10px', right: '-10px' }}>
+      <button
+        onClick={() => onDelete(index)}
+        style={{ position: 'absolute', top: '-10px', right: '-10px' }}
+      >
         Delete
       </button>
     </div>
