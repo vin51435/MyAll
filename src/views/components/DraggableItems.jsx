@@ -1,9 +1,8 @@
-// DraggableItem.js
 import React from 'react';
 import { useDrag } from 'react-dnd';
+import { itemStyleTemplates } from '../ItemStyles';
 
 const DraggableItem = ({ component, index, onDrag, onDelete }) => {
-  console.log(component, 'component');
 
   const [{ isDragging }, drag] = useDrag({
     type: 'COMPONENT',
@@ -11,35 +10,18 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
+    options: {
+      dropEffect: 'move',
+    },
     end: (item, monitor) => {
       const delta = monitor.getDifferenceFromInitialOffset();
       if (delta) {
-        onDrag(index, delta);
+        onDrag(index, delta, item);
       }
     },
   });
 
-  // const dynamicStyles = {
-  //   width: component.positions.right - component.positions.left,
-  //   height: component.positions.bottom - component.positions.top,
-  // };
-
-  const getDynamicStyles = () => {
-    switch (component.type) {
-      case 'Text':
-        return {
-          width: component.positions.right - component.positions.left,
-          height: component.positions.bottom - component.positions.top,
-          fontSize: '16px', fontWeight: 'bold'
-        };
-      case 'Image':
-        return { width: '150px', height: '100px' };
-      default:
-        return { width: '100px', height: '50px' };
-    }
-  };
-
-  const dynamicStyles = getDynamicStyles();
+  const dynamicStyles = itemStyleTemplates[component.type];
 
   const renderItemContent = (component) => {
     switch (component.type) {
@@ -60,11 +42,11 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
 
   return (
     <div
+      id={`${index}_${component.type}_item`}
       style={{
         position: 'absolute',
         left: component.positions.left,
         top: component.positions.top,
-        border: '1px solid #000',
         ...dynamicStyles,
       }}
     >
@@ -79,13 +61,15 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
         }}
       >
         {renderItemContent(component)}
+        <div className="connector left" id={`${index}_${component.type}_item_left_connector`}></div>
+        <div className="connector right" id={`${index}_${component.type}_item_right_connector`}></div>
+        <button
+          onClick={() => onDelete(index)}
+          style={{ position: 'absolute', top: '-10px', right: '-10px' }}
+        >
+          Delete
+        </button>
       </div>
-      <button
-        onClick={() => onDelete(index)}
-        style={{ position: 'absolute', top: '-10px', right: '-10px' }}
-      >
-        Delete
-      </button>
     </div>
   );
 };
