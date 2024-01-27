@@ -46,7 +46,6 @@ const Main = () => {
       const updatedComponents = [...prev];
       const item = updatedComponents[index];
 
-      // Update all four sides
       item.positions.top += delta.y;
       item.positions.bottom += delta.y;
       item.positions.left += delta.x;

@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDrag } from 'react-dnd';
 import { itemStyleTemplates } from '../ItemStyles';
 
 const DraggableItem = ({ component, index, onDrag, onDelete }) => {
+  const dragRef = useRef(null);
+  const leftConnectorRef = useRef(null);
+  const rightConnectorRef = useRef(null);
+  const monitorRef = useRef(null);
 
   const [{ isDragging }, drag] = useDrag({
     type: 'COMPONENT',
     item: { type: component.type, index },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
+    collect: (monitor) => {
+      monitorRef.current = monitor;
+      return {
+        isDragging: !!monitor.isDragging(),
+      };
+    },
     options: {
       dropEffect: 'move',
     },
@@ -20,6 +27,48 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
       }
     },
   });
+
+  useEffect(() => {
+    let animationFrameId;
+
+    const animate = () => {
+      if (isDragging) {
+        const leftConnectorPosition = getPosition(leftConnectorRef.current);
+        const rightConnectorPosition = getPosition(rightConnectorRef.current);
+
+        console.log(`${index}_${component.type}_item_left_connector`, leftConnectorPosition);
+        console.log(`${index}_${component.type}_item_right_connector`, rightConnectorPosition);
+
+        // Perform any other logic with the continuous positions here
+
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+
+    if (isDragging) {
+      animate();
+    }
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isDragging]);
+
+  drag(dragRef);
+
+  const getPosition = (element) => {
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      const scrollX = window.scrollX !== undefined ? window.scrollX : window.pageXOffset;
+      const scrollY = window.scrollY !== undefined ? window.scrollY : window.pageYOffset;
+  
+      return {
+        x: rect.left + scrollX,
+        y: rect.top + scrollY,
+      };
+    }
+    return null;
+  };
 
   const dynamicStyles = itemStyleTemplates[component.type];
 
@@ -51,7 +100,7 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
       }}
     >
       <div
-        ref={(node) => drag(node)}
+        ref={(node) => (dragRef.current = node)}
         style={{
           width: dynamicStyles.width,
           height: dynamicStyles.height,
@@ -61,8 +110,16 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
         }}
       >
         {renderItemContent(component)}
-        <div className="connector left" id={`${index}_${component.type}_item_left_connector`}></div>
-        <div className="connector right" id={`${index}_${component.type}_item_right_connector`}></div>
+        <div
+          ref={(node) => (leftConnectorRef.current = node)}
+          className="connector left"
+          id={`${index}_${component.type}_item_left_connector`}
+        ></div>
+        <div
+          ref={(node) => (rightConnectorRef.current = node)}
+          className="connector right"
+          id={`${index}_${component.type}_item_right_connector`}
+        ></div>
         <button
           onClick={() => onDelete(index)}
           style={{ position: 'absolute', top: '-10px', right: '-10px' }}
@@ -70,6 +127,9 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
           Delete
         </button>
       </div>
+        <div>
+          0
+        </div>
     </div>
   );
 };
