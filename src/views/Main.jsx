@@ -3,9 +3,11 @@ import Sidebar from './components/Sidebar';
 import DraggableItem from './components/DraggableItems';
 import { useDrop } from 'react-dnd';
 import { itemStyleTemplates } from './ItemStyles';
+import ConnectionLine from './components/ConnectionLine';
 
 const Main = () => {
   const [draggedComponents, setDraggedComponents] = useState([]);
+  const [connections, setConnections] = useState([])
   const [canvasSize, setCanvasSize] = useState({ width: 1000, height: 600 });
 
   const [, drop] = useDrop({
@@ -95,6 +97,12 @@ const Main = () => {
     }
   };
 
+  const handleConnect = (sourceIndex, connection) => {
+    // Add the connection to the state
+    console.log(`Connecting item ${connection.from} to ${connection.to}`)
+    setConnections((prev) => [...prev, connection]);
+  };
+
   return (
     <div style={{ display: 'flex' }}>
       <Sidebar onSidebarItemClick={handleSidebarItemClick} />
@@ -110,7 +118,20 @@ const Main = () => {
         }}
       >
         {draggedComponents.map((component, index) => (
-          <DraggableItem key={index} index={index} component={component} onDrag={handleDrag} onDelete={handleDelete} />
+          <DraggableItem
+            key={index}
+            index={index}
+            component={component}
+            onDrag={handleDrag}
+            onDelete={handleDelete}
+            onConnect={handleConnect}
+            setDraggedComponents={setDraggedComponents}
+            draggedComponents={draggedComponents}
+          />
+        ))}
+        {/* Render lines for connections */}
+        {connections.map((connection, idx) => (
+          <ConnectionLine key={idx} from={connection} to={connections[idx + 1]} draggedComponents={draggedComponents} />
         ))}
       </div>
     </div>

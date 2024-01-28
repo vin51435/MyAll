@@ -1,12 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { itemStyleTemplates } from '../ItemStyles';
 
-const DraggableItem = ({ component, index, onDrag, onDelete }) => {
+const DraggableItem = ({ component, index, onDrag, onDelete, onConnect, setDraggedComponents, draggedComponents }) => {
   const dragRef = useRef(null);
   const leftConnectorRef = useRef(null);
   const rightConnectorRef = useRef(null);
   const monitorRef = useRef(null);
+
+  const [selectedConnector, setSelectedConnector] = useState(null);
 
   const [{ isDragging }, drag] = useDrag({
     type: 'COMPONENT',
@@ -61,7 +63,7 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
       const rect = element.getBoundingClientRect();
       const scrollX = window.scrollX !== undefined ? window.scrollX : window.pageXOffset;
       const scrollY = window.scrollY !== undefined ? window.scrollY : window.pageYOffset;
-  
+
       return {
         x: rect.left + scrollX,
         y: rect.top + scrollY,
@@ -70,6 +72,41 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
     return null;
   };
 
+  const handleConnect = (targetIndex, connectorType) => {
+    if (selectedConnector !== null) {
+      const sourceConnector = `${index}_${component.type}_item_${selectedConnector}_connector`;
+      const targetConnector = `${targetIndex}_${draggedComponents[targetIndex].type}_item_${connectorType}_connector`;
+  
+      const connection = {
+        from: sourceConnector,
+        to: targetConnector,
+      };
+  
+      // Call the onConnect prop to handle the connection logic
+      onConnect(index, connection);
+  
+      // Add the connection to the item's connections property
+      setDraggedComponents((prev) =>
+        prev.map((item, i) => {
+          if (i === index) {
+            return {
+              ...item,
+              connections: [...(item.connections || []), connection],
+            };
+          }
+          return item;
+        })
+      );
+  
+      // Reset selectedConnector after making a connection
+      setSelectedConnector(null);
+    } else {
+      // Set the selected connector when the user clicks on a connector
+      setSelectedConnector(connectorType);
+    }
+  };
+  
+  
   const dynamicStyles = itemStyleTemplates[component.type];
 
   const renderItemContent = (component) => {
@@ -92,8 +129,8 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
   return (
     <div
       id={`${index}_${component.type}_item`}
+      className='position-absolute d-flex'
       style={{
-        position: 'absolute',
         left: component.positions.left,
         top: component.positions.top,
         ...dynamicStyles,
@@ -101,6 +138,7 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
     >
       <div
         ref={(node) => (dragRef.current = node)}
+        className='h-100'
         style={{
           width: dynamicStyles.width,
           height: dynamicStyles.height,
@@ -111,25 +149,29 @@ const DraggableItem = ({ component, index, onDrag, onDelete }) => {
       >
         {renderItemContent(component)}
         <div
-          ref={(node) => (leftConnectorRef.current = node)}
-          className="connector left"
-          id={`${index}_${component.type}_item_left_connector`}
-        ></div>
-        <div
-          ref={(node) => (rightConnectorRef.current = node)}
-          className="connector right"
-          id={`${index}_${component.type}_item_right_connector`}
-        ></div>
-        <button
-          onClick={() => onDelete(index)}
-          style={{ position: 'absolute', top: '-10px', right: '-10px' }}
+          className='h-75'
         >
-          Delete
-        </button>
-      </div>
-        <div>
-          0
+          <div className='h-100'></div>
+          <button
+            ref={(node) => (leftConnectorRef.current = node)}
+            className="connector left"
+            id={`${index}_${component.type}_item_left_connector`}
+            onClick={() => handleConnect(index, 'left')}
+          ></button>
+          <button
+            ref={(node) => (rightConnectorRef.current = node)}
+            className="connector right"
+            id={`${index}_${component.type}_item_right_connector`}
+            onClick={() => handleConnect(index, 'right')}
+          ></button>
+          <button
+            onClick={() => onDelete(index)}
+            style={{ position: 'absolute', top: '-10px', right: '-10px' }}
+          >
+            Delete
+          </button>
         </div>
+      </div>
     </div>
   );
 };
